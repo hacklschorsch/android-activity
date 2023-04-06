@@ -287,6 +287,28 @@ public class HaskellActivity extends Activity {
     fileUploadCallback = cb;
   }
 
+    // return true if there was a qr code scanner, false if we sent them to
+    // the market.
+    public boolean getQRCode() {
+	try {
+
+	    Intent intent = new Intent("com.google.zxing.client.android.SCAN");
+	    intent.putExtra("SCAN_MODE", "QR_CODE_MODE"); // "PRODUCT_MODE for bar codes
+
+	    // 0 might be an id identifying this intent that comes back with
+	    // the result.
+	    startActivityForResult(intent, 0);
+	    return true;
+	} catch (Exception e) {
+
+	    Uri marketUri = Uri.parse("market://details?id=com.google.zxing.client.android");
+	    Intent marketIntent = new Intent(Intent.ACTION_VIEW,marketUri);
+	    startActivity(marketIntent);
+	    return false;
+	}
+    }
+
+
   private HashMap<Integer, PermissionRequest> permissionRequests;
   private int nextRequestCode = 0;
   private ValueCallback<Uri[]> fileUploadCallback;

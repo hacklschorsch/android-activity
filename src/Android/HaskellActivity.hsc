@@ -5,6 +5,7 @@ module Android.HaskellActivity
   , getHaskellActivity
   , getFilesDir
   , getCacheDir
+  , getQRCode
   , continueWithCallbacks
   , traceActivityCallbacks
   ) where
@@ -14,6 +15,7 @@ import Control.Monad
 import Data.Default
 import Debug.Trace
 import Foreign.C.String
+import Foreign.C.Types
 import Foreign.Marshal.Utils
 import Foreign.Ptr
 import Foreign.Storable
@@ -23,6 +25,8 @@ import Foreign.Storable
 newtype HaskellActivity = HaskellActivity { unHaskellActivity :: Ptr HaskellActivity }
 
 foreign import ccall unsafe "HaskellActivity_get" getHaskellActivity :: IO HaskellActivity
+
+foreign import ccall unsafe "HaskellActivity_getQRCode" getQRCode :: IO Bool
 
 foreign import ccall unsafe "HaskellActivity_getFilesDir" getFilesDirCString
   :: HaskellActivity
@@ -73,6 +77,8 @@ data ActivityCallbacks = ActivityCallbacks
   , _activityCallbacks_onBackPressed :: IO ()
   , _activityCallbacks_onNewIntent :: String -> String -> IO ()
   , _activityCallbacks_firebaseInstanceIdServiceSendRegistrationToServer :: String -> IO ()
+  -- request code, result code, activity data
+  , _activityCallbacks_onActivityResult :: Int -> Int -> String -> IO ()
   }
 
 instance Default ActivityCallbacks where
@@ -87,6 +93,7 @@ instance Default ActivityCallbacks where
     , _activityCallbacks_onBackPressed = return ()
     , _activityCallbacks_onNewIntent = \_ _ -> return ()
     , _activityCallbacks_firebaseInstanceIdServiceSendRegistrationToServer = \_ -> return ()
+    , _activityCallbacks_onActivityResult = \_ _ _ -> return ()
     }
 
 traceBracket :: String -> IO a -> IO a
@@ -105,11 +112,13 @@ traceActivityCallbacks ac = ActivityCallbacks
   , _activityCallbacks_onBackPressed = traceBracket "onBackPressed" $ _activityCallbacks_onBackPressed ac
   , _activityCallbacks_firebaseInstanceIdServiceSendRegistrationToServer = \x ->
       traceBracket "firebaseInstanceIdServiceSendRegistrationToServer" $ _activityCallbacks_firebaseInstanceIdServiceSendRegistrationToServer ac x
+  , _activityCallbacks_onActivityResult = \x y z -> traceBracket "onActivityResult" $ _activityCallbacks_onActivityResult ac x y z
   }
 
 foreign import ccall "wrapper" wrapIO :: IO () -> IO (FunPtr (IO ()))
 foreign import ccall "wrapper" wrapCStringIO :: (CString -> IO ()) -> IO (FunPtr (CString -> IO ()))
 foreign import ccall "wrapper" wrapCStringCStringIO :: (CString -> CString -> IO ()) -> IO (FunPtr (CString -> CString -> IO ()))
+foreign import ccall "wrapper" wrapCIntCIntCStringIO :: (CInt -> CInt -> CString -> IO ()) -> IO (FunPtr (CInt -> CInt -> CString -> IO ()))
 
 activityCallbacksToPtrs :: ActivityCallbacks -> IO ActivityCallbacksPtrs
 activityCallbacksToPtrs ac = ActivityCallbacksPtrs
@@ -128,8 +137,12 @@ activityCallbacksToPtrs ac = ActivityCallbacksPtrs
       )
   <*> wrapCStringIO (\token -> do
         token' <- peekCString token
-        _activityCallbacks_firebaseInstanceIdServiceSendRegistrationToServer ac token'
-      )
+        _activityCallbacks_firebaseInstanceIdServiceSendRegistrationToServer ac token')
+  <*> wrapCIntCIntCStringIO (\a b c -> do
+                               let a' = fromIntegral a
+                                   b' = fromIntegral b
+                               c' <- peekCString c
+                               _activityCallbacks_onActivityResult ac a' b' c')
 
 data ActivityCallbacksPtrs = ActivityCallbacksPtrs
   { _activityCallbacksPtrs_onCreate :: FunPtr (IO ())
@@ -142,6 +155,7 @@ data ActivityCallbacksPtrs = ActivityCallbacksPtrs
   , _activityCallbacksPtrs_onBackPressed :: FunPtr (IO ())
   , _activityCallbacksPtrs_onNewIntent :: FunPtr (CString -> CString -> IO ())
   , _activityCallbacksPtrs_firebaseInstanceIdService_sendRegistrationToServer :: FunPtr (CString -> IO ())
+  , _activityCallbacksPtrs_onActivityResult :: FunPtr (CInt -> CInt -> CString -> IO ())
   }
 
 instance Storable ActivityCallbacksPtrs where
@@ -158,6 +172,7 @@ instance Storable ActivityCallbacksPtrs where
     #{poke ActivityCallbacks, onBackPressed} p $ _activityCallbacksPtrs_onBackPressed ac
     #{poke ActivityCallbacks, onNewIntent} p $ _activityCallbacksPtrs_onNewIntent ac
     #{poke ActivityCallbacks, firebaseInstanceIdService_sendRegistrationToServer} p $ _activityCallbacksPtrs_firebaseInstanceIdService_sendRegistrationToServer ac
+    #{poke ActivityCallbacks, onActivityResult} p $ _activityCallbacksPtrs_onActivityResult ac
   peek p = ActivityCallbacksPtrs
     <$> #{peek ActivityCallbacks, onCreate} p
     <*> #{peek ActivityCallbacks, onStart} p
@@ -169,3 +184,4 @@ instance Storable ActivityCallbacksPtrs where
     <*> #{peek ActivityCallbacks, onBackPressed} p
     <*> #{peek ActivityCallbacks, onNewIntent} p
     <*> #{peek ActivityCallbacks, firebaseInstanceIdService_sendRegistrationToServer} p
+    <*> #{peek ActivityCallbacks, onActivityResult} p

@@ -14,6 +14,7 @@ typedef struct ActivityCallbacks {
   void (*onBackPressed) ();
   void (*onNewIntent) (const char *, const char *); //TODO: Pass the whole argument and use JNI
   void (*firebaseInstanceIdService_sendRegistrationToServer) (char *);
+  void (*onActivityResult) (int, int, const char *); //TODO: Same comment as onNewIntent
 } ActivityCallbacks;
 
 extern JavaVM* HaskellActivity_jvm;

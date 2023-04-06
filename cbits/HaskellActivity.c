@@ -156,6 +156,18 @@ jobject java_io_File_getPath(JNIEnv *env, jobject file) {
   return result;
 }
 
+bool HaskellActivity_getQRCode(jobject haskellActivity) {
+  assert(haskellActivity);
+  JNIEnv *env = getJNIEnv();
+
+  jclass haskellActivityClass = (*env)->GetObjectClass(env, haskellActivity);
+  jmethodID getQRCode = (*env)->GetMethodID(env, haskellActivityClass, "getQRCode", "()Z;");
+  assert(getQRCode);
+
+  jboolean hadScanner = (*env)->CallBooleanMethod(env, haskellActivity, getQRCode);
+  return (bool)hadScanner;
+}
+
 char *HaskellActivity_getFilesDir(jobject haskellActivity) {
   assert(haskellActivity);
   JNIEnv *env = getJNIEnv();
