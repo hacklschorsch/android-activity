@@ -109,7 +109,8 @@ JNIEXPORT void JNICALL Java_systems_obsidian_LocalFirebaseMessagingService_handl
 
 JNIEXPORT void JNICALL Java_systems_obsidian_HaskellActivity_haskellOnActivityResult (JNIEnv *env, jobject thisObj, jlong callbacksLong, jlong requestCode, jlong resultCode, jstring intentData) {
   const ActivityCallbacks *callbacks = (const ActivityCallbacks *)callbacksLong;
-  if(callbacks->onActivityResult) {
+  __android_log_print(ANDROID_LOG_DEBUG, "HaskellActivity", "haskellOnActivityResult(%lx, %lx, %lx, %ld, %ld)", env, thisObj, callbacks, requestCode, resultCode, intentData);
+  if(callbacks && callbacks->onActivityResult) {
     const char *cstring_intentdata = (*env)->GetStringUTFChars(env, intentData, 0);
     callbacks->onActivityResult((int)requestCode, (int)resultCode, cstring_intentdata);
     (*env)->ReleaseStringUTFChars(env, intentData, cstring_intentdata);
@@ -166,17 +167,32 @@ jobject java_io_File_getPath(JNIEnv *env, jobject file) {
 }
 
 bool HaskellActivity_getQRCode(jobject haskellActivity) {
-  __android_log_print(ANDROID_LOG_DEBUG, "HaskellActivity", "HaskellActivity_getQRCode(%lu)\n", (long)haskellActivity);
-  assert(haskellActivity);
+  __android_log_print(ANDROID_LOG_DEBUG, "HaskellActivity", "HaskellActivity_getQRCode(%lx)\n", (unsigned long)haskellActivity);
+  if (!haskellActivity) {
+    __android_log_print(ANDROID_LOG_DEBUG, "HaskellActivity", "in getQRCode, haskellActivity is null");
+    assert(haskellActivity);
+  }
+
   JNIEnv *env = getJNIEnv();
-  __android_log_print(ANDROID_LOG_DEBUG, "HaskellActivity", "env = %lu\n", (long)env);
+  if (!env) {
+    __android_log_print(ANDROID_LOG_DEBUG, "HaskellActivity", "in getQRCode, env is null");
+    assert(env);
+  }
+
   jclass haskellActivityClass = (*env)->GetObjectClass(env, haskellActivity);
-  __android_log_print(ANDROID_LOG_DEBUG, "HaskellActivity", "haskellActivityClass = %lu\n", (long)haskellActivityClass);
-  jmethodID getQRCode = (*env)->GetMethodID(env, haskellActivityClass, "getQRCode", "()Z;");
-  __android_log_print(ANDROID_LOG_DEBUG, "HaskellActivity", "getQRCode = %lu\n", (long)getQRCode);
-  assert(getQRCode);
+  if (!haskellActivityClass) {
+    __android_log_print(ANDROID_LOG_DEBUG, "HaskellActivity", "in getQRCode, haskellActivityClass is null");
+    assert(haskellActivityClass);
+  }
+
+  jmethodID getQRCode = (*env)->GetMethodID(env, haskellActivityClass, "getQRCode", "()Z");
+  if (!getQRCode) {
+    __android_log_print(ANDROID_LOG_DEBUG, "HaskellActivity", "in getQRCode, getQRCode is null");
+    assert(getQRCode);
+  }
 
   jboolean hadScanner = (*env)->CallBooleanMethod(env, haskellActivity, getQRCode);
+  __android_log_print(ANDROID_LOG_DEBUG, "HaskellActivity", "hadScanner = %d\n", (int)hadScanner);
   return (bool)hadScanner;
 }
 
@@ -238,6 +254,8 @@ void HaskellActivity_continueWithCallbacks(const ActivityCallbacks *callbacks) {
 JNIEXPORT int JNICALL Java_systems_obsidian_HaskellActivity_haskellStartMain (JNIEnv *env, jobject thisObj, jobject setCallbacksQueue_) {
   // Retain the HaskellActivity that we're running under
   haskellActivity = (*env)->NewGlobalRef(env, thisObj);
+  __android_log_print(ANDROID_LOG_DEBUG, "HaskellActivity", "haskellActivity = %lx", (unsigned long)haskellActivity);
+
   setCallbacksQueue = (*env)->NewGlobalRef(env, setCallbacksQueue_);
 
   // Override Haskell's exit behavior so that it returns here instead of exiting

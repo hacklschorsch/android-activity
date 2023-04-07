@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.content.ActivityNotFoundException;
 import android.content.pm.PackageManager;
 import android.Manifest;
 import android.net.Uri;
@@ -33,6 +34,7 @@ public class HaskellActivity extends Activity {
   public native void haskellOnActivityResult(long callbacks, int requestCode, int resultCode, String intentData);
 
   public static final int REQUEST_CODE_FILE_PICKER = 51426;
+  public static final int REQUEST_CODE_QRCODE = 51427;
 
   // Apparently 'long' is the right way to store a C pointer in Java
   // See https://stackoverflow.com/questions/337268/what-is-the-correct-way-to-store-a-native-pointer-inside-a-java-object
@@ -246,6 +248,7 @@ public class HaskellActivity extends Activity {
   // 'setFileUploadCallback'. The callback will be handled here.
   @Override
   public void onActivityResult(final int requestCode, final int resultCode, final Intent intent) {
+      Log.d("HaskellActivity", String.format("onActivityResult(%d, %d)", requestCode, resultCode));
     if (requestCode == REQUEST_CODE_FILE_PICKER) {
       if (resultCode == Activity.RESULT_OK) {
         if (intent != null) {
@@ -279,7 +282,20 @@ public class HaskellActivity extends Activity {
       }
     } else {
 	if (callbacks != 0) {
-	    haskellOnActivityResult(callbacks, requestCode, resultCode, intent.getDataString());
+	    if (requestCode == REQUEST_CODE_QRCODE) {
+		if (intent != null) {
+		    Log.d("HaskellActivity", "entering haskellOnActivityResult");
+		    String s = intent.getDataString();
+		    Log.d("HaskellActivity", String.format("data string is %s", s));
+		    haskellOnActivityResult(callbacks, requestCode, resultCode, s);
+		} else {
+		    Log.d("HaskellActivity", "cannot haskellOnActivity because intent is null");
+		}
+	    } else {
+		Log.d("HaskellActivity", String.format("skipping haskellOnActivityResult because requestCode is %d", requestCode));
+	    }
+	} else {
+	    Log.d("HaskellActivity", "skipping haskellOnActivityResult because callbacks is null");
 	}
     }
   }
@@ -295,27 +311,55 @@ public class HaskellActivity extends Activity {
     // return true if there was a qr code scanner, false if we sent them to
     // the market.
     public boolean getQRCode() {
-	Log.d("HaskellActivity", "getQRCode starting");
-	try {
+	Log.d("HaskellActivity", "HaskellActivity::getQRCode starting");
 
-	    Intent intent = new Intent("com.google.zxing.client.android.SCAN");
-	    intent.putExtra("SCAN_MODE", "QR_CODE_MODE"); // "PRODUCT_MODE for bar codes
-	    Log.d("HaskellActivity", "startActivityForResult...");
-	    // 0 might be an id identifying this intent that comes back with
-	    // the result.
-	    startActivityForResult(intent, 0);
-	    Log.d("HaskellActivity", "startActivityForResult succeeded");
-	    return true;
-	} catch (Exception e) {
-	    Log.d("HaskellActivity", "getQRCode got an exception");
+	// Works
+	// Intent intent = new Intent("android.intent.action.VIEW", Uri.parse("https://google.com/"));
+	// startActivity(intent);
 
-	    Uri marketUri = Uri.parse("market://details?id=com.google.zxing.client.android");
-	    Intent marketIntent = new Intent(Intent.ACTION_VIEW,marketUri);
-	    Log.d("HaskellActivity", "getQRCode starting market intent");
-	    startActivity(marketIntent);
-	    Log.d("HaskellActivity", "getQRCode started it");
+	// Works
+	// Intent intent = new Intent("android.intent.action.PICK");
+	// startActivityForResult(intent, 123);
+
+	// https://github.com/zxing/zxing/blob/99e9b34f5afc21fdaeead283d5ed0bc1314cbec1/android/src/com/google/zxing/client/android/Intents.java#L39
+	Intent intent = new Intent("com.google.zxing.client.android.SCAN");
+	// https://github.com/zxing/zxing/blob/99e9b34f5afc21fdaeead283d5ed0bc1314cbec1/android/src/com/google/zxing/client/android/Intents.java#L62-L65
+	intent.putExtra("SCAN_MODE", "QR_CODE_MODE");
+
+	// XXX Consider https://stackoverflow.com/questions/62535856/intent-resolveactivity-returns-null-in-api-30/62856745#62856745
+	Log.d("HaskellActivity", "HaskellActivity::getQRCode resolving activity...");
+	PackageManager packageManager = getPackageManager();
+	if (intent.resolveActivity(packageManager) == null) {
+	    Log.d("HaskellActivity", "HaskellActivity::getQRCode cannot resolve activty.");
 	    return false;
 	}
+	Log.d("HaskellActivity", "HaskellActivity::getQRCode resolved activty.");
+
+
+	Log.d("HaskellActivity", "HaskellActivity::getQRCode entering startActivityForResult");
+	startActivityForResult(intent, REQUEST_CODE_QRCODE);
+	Log.d("HaskellActivity", "HaskellActivity::getQRCode completed startActivityForResult");
+
+	// try {
+	//     Intent intent = new Intent("com.google.zxing.client.android.SCAN");
+	//     intent.putExtra("SCAN_MODE", "QR_CODE_MODE"); // "PRODUCT_MODE for bar codes
+	//     Log.d("HaskellActivity", "HaskellActivity::getQRCode entering startActivityForResult");
+	//     startActivityForResult(intent, REQUEST_CODE_QRCODE);
+	//     Log.d("HaskellActivity", "HaskellActivity::getQRCode succeeded");
+	//     return true;
+	// } catch (ActivityNotFoundException e) {
+	//     Log.d("HaskellActivity", "HaskellActivity::getQRCode found no QR code intent handler");
+	//     // Uri marketUri = Uri.parse("market://details?id=com.google.zxing.client.android");
+	//     // Intent marketIntent = new Intent(Intent.ACTION_VIEW,marketUri);
+	//     // Log.d("HaskellActivity", "HaskellActivity::getQRCode starting market intent");
+	//     // startActivity(marketIntent);
+	//     // Log.d("HaskellActivity", "HaskellActivity::getQRCode started market intent");
+	//     return false;
+	// } catch (Exception e) {
+	//     Log.d("HaskellActivity", String.format("HaskellActivity::getQRCode unhandled exception: %s", e.toString()));
+	//     return false;
+	// }
+	return false;
     }
 
 
