@@ -26,7 +26,7 @@ newtype HaskellActivity = HaskellActivity { unHaskellActivity :: Ptr HaskellActi
 
 foreign import ccall unsafe "HaskellActivity_get" getHaskellActivity :: IO HaskellActivity
 
-foreign import ccall unsafe "HaskellActivity_getQRCode" getQRCode :: IO Bool
+foreign import ccall unsafe "HaskellActivity_getQRCode" getQRCode :: HaskellActivity -> IO Bool
 
 foreign import ccall unsafe "HaskellActivity_getFilesDir" getFilesDirCString
   :: HaskellActivity
