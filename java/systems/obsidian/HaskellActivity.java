@@ -30,6 +30,7 @@ public class HaskellActivity extends Activity {
   public native void haskellOnRestart(long callbacks);
   public native void haskellOnBackPressed(long callbacks);
   public native void haskellOnNewIntent(long callbacks, String intent, String intentdata);
+  public native void haskellOnActivityResult(long callbacks, int requestCode, int resultCode, String intentData);
 
   public static final int REQUEST_CODE_FILE_PICKER = 51426;
 
@@ -276,6 +277,10 @@ public class HaskellActivity extends Activity {
         fileUploadCallback.onReceiveValue(null);
         fileUploadCallback = null;
       }
+    } else {
+	if (callbacks != 0) {
+	    haskellOnActivityResult(callbacks, requestCode, resultCode, intent.getDataString());
+	}
     }
   }
 
@@ -290,20 +295,25 @@ public class HaskellActivity extends Activity {
     // return true if there was a qr code scanner, false if we sent them to
     // the market.
     public boolean getQRCode() {
+	Log.d("HaskellActivity", "getQRCode starting");
 	try {
 
 	    Intent intent = new Intent("com.google.zxing.client.android.SCAN");
 	    intent.putExtra("SCAN_MODE", "QR_CODE_MODE"); // "PRODUCT_MODE for bar codes
-
+	    Log.d("HaskellActivity", "startActivityForResult...");
 	    // 0 might be an id identifying this intent that comes back with
 	    // the result.
 	    startActivityForResult(intent, 0);
+	    Log.d("HaskellActivity", "startActivityForResult succeeded");
 	    return true;
 	} catch (Exception e) {
+	    Log.d("HaskellActivity", "getQRCode got an exception");
 
 	    Uri marketUri = Uri.parse("market://details?id=com.google.zxing.client.android");
 	    Intent marketIntent = new Intent(Intent.ACTION_VIEW,marketUri);
+	    Log.d("HaskellActivity", "getQRCode starting market intent");
 	    startActivity(marketIntent);
+	    Log.d("HaskellActivity", "getQRCode started it");
 	    return false;
 	}
     }

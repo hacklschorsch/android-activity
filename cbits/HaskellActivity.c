@@ -107,6 +107,15 @@ JNIEXPORT void JNICALL Java_systems_obsidian_LocalFirebaseMessagingService_handl
   }
 }
 
+JNIEXPORT void JNICALL Java_systems_obsidian_HaskellActivity_haskellOnActivityResult (JNIEnv *env, jobject thisObj, jlong callbacksLong, jlong requestCode, jlong resultCode, jstring intentData) {
+  const ActivityCallbacks *callbacks = (const ActivityCallbacks *)callbacksLong;
+  if(callbacks->onActivityResult) {
+    const char *cstring_intentdata = (*env)->GetStringUTFChars(env, intentData, 0);
+    callbacks->onActivityResult((int)requestCode, (int)resultCode, cstring_intentdata);
+    (*env)->ReleaseStringUTFChars(env, intentData, cstring_intentdata);
+  }
+}
+
 static jmp_buf mainJmpbuf;
 
 // setjmp returns 0 on its initial call, but we want to be able to return all
@@ -157,11 +166,14 @@ jobject java_io_File_getPath(JNIEnv *env, jobject file) {
 }
 
 bool HaskellActivity_getQRCode(jobject haskellActivity) {
+  __android_log_print(ANDROID_LOG_DEBUG, "HaskellActivity", "HaskellActivity_getQRCode(%lu)\n", (long)haskellActivity);
   assert(haskellActivity);
   JNIEnv *env = getJNIEnv();
-
+  __android_log_print(ANDROID_LOG_DEBUG, "HaskellActivity", "env = %lu\n", (long)env);
   jclass haskellActivityClass = (*env)->GetObjectClass(env, haskellActivity);
+  __android_log_print(ANDROID_LOG_DEBUG, "HaskellActivity", "haskellActivityClass = %lu\n", (long)haskellActivityClass);
   jmethodID getQRCode = (*env)->GetMethodID(env, haskellActivityClass, "getQRCode", "()Z;");
+  __android_log_print(ANDROID_LOG_DEBUG, "HaskellActivity", "getQRCode = %lu\n", (long)getQRCode);
   assert(getQRCode);
 
   jboolean hadScanner = (*env)->CallBooleanMethod(env, haskellActivity, getQRCode);
