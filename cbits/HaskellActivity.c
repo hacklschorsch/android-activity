@@ -184,6 +184,50 @@ char *HaskellActivity_getCacheDir(jobject haskellActivity) {
   return copyToCString(env, java_io_File_getPath(env, cacheDir));
 }
 
+/*
+ * Create a new activity with an Intent to VIEW the given URL.
+ */
+void HaskellActivity_createViewIntent(jobject haskellActivity, const char* cURL) {
+  __android_log_print(ANDROID_LOG_DEBUG, "HaskellActivity", "HaskellActivity_createViewIntent(%lx)\n", (unsigned long)haskellActivity);
+  if (!haskellActivity) {
+    __android_log_print(ANDROID_LOG_DEBUG, "HaskellActivity", "in createViewIntent, haskellActivity is null");
+    assert(haskellActivity);
+  }
+
+  JNIEnv *env = getJNIEnv();
+  if (!env) {
+    __android_log_print(ANDROID_LOG_DEBUG, "HaskellActivity", "in createViewItent, env is null");
+    assert(env);
+  }
+
+  jclass haskellActivityClass = (*env)->GetObjectClass(env, haskellActivity);
+  if (!haskellActivityClass) {
+    __android_log_print(ANDROID_LOG_DEBUG, "HaskellActivity", "in createViewIntent, haskellActivityClass is null");
+    assert(haskellActivityClass);
+  }
+
+  jmethodID createViewIntent = (*env)->GetMethodID(env, haskellActivityClass, "createViewIntent", "(Ljava/lang/String;)V");
+  if (!createViewIntent) {
+    __android_log_print(ANDROID_LOG_DEBUG, "HaskellActivity", "in createViewIntent, createViewIntent is null");
+    assert(createViewIntent);
+  }
+
+  __android_log_print(ANDROID_LOG_DEBUG, "HaskellActivity", "in createViewIntent, going to create jstring");
+  jstring jURL = (*env)->NewStringUTF(env, cURL);
+
+  __android_log_print(ANDROID_LOG_DEBUG, "HaskellActivity", "in createViewIntent, going to call Java createViewIntent");
+  (*env)->CallVoidMethod(env, haskellActivity, createViewIntent, jURL);
+
+  if ((*env)->ExceptionOccurred(env)) {
+    __android_log_write(ANDROID_LOG_DEBUG, "HaskellActivity", "in createViewIntent, exception");
+    (*env)->ExceptionDescribe(env);
+    (*env)->ExceptionClear(env);
+  }
+
+  __android_log_print(ANDROID_LOG_DEBUG, "HaskellActivity", "in createViewIntent, done");
+}
+
+
 // Continue constructing the HaskellActivity.
 // WARNING: This may only be invoked once per Haskell 'main' invocation
 void HaskellActivity_continueWithCallbacks(const ActivityCallbacks *callbacks) {

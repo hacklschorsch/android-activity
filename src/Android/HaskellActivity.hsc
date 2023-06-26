@@ -5,10 +5,12 @@ module Android.HaskellActivity
   , getHaskellActivity
   , getFilesDir
   , getCacheDir
+  , createViewIntent
   , continueWithCallbacks
   , traceActivityCallbacks
   ) where
 
+import qualified Data.ByteString as B
 import Control.Exception
 import Control.Monad
 import Data.Default
@@ -32,6 +34,11 @@ foreign import ccall unsafe "HaskellActivity_getCacheDir" getCacheDirCString
   :: HaskellActivity
   -> IO CString
 
+foreign import ccall unsafe "HaskellActivity_createViewIntent" createViewIntentCString
+  :: HaskellActivity
+  -> CString
+  -> IO ()
+
 -- | Copy a C string into Haskell returning 'Nothing' if it is NULL.
 peekMaybeCString :: CString -> IO (Maybe String)
 peekMaybeCString str =
@@ -52,6 +59,20 @@ getFilesDir = getFilesDirCString >=> peekMaybeCString
 -- main widget.
 getCacheDir :: HaskellActivity -> IO (Maybe FilePath)
 getCacheDir = getCacheDirCString >=> peekMaybeCString
+
+-- | Create a view intent to try to start an activity to view the content at
+-- the given URL.
+createViewIntent
+    :: HaskellActivity
+    -> B.ByteString
+    -- ^ The UTF-8 encoded representation of the URL of the content.
+    -> IO ()
+createViewIntent act url =
+  B.useAsCStringLen url $
+    \(cstr, _) ->
+      -- The Java API doesn't accept length information so we don't bother
+      -- passing it beyond this level.
+      createViewIntentCString act cstr
 
 -- | Allow the HaskellActivity to proceed.  The given callbacks will be invoked
 -- at the appropriate times in the Android Activity lifecycle.
