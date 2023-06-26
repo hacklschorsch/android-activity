@@ -154,6 +154,15 @@ public class HaskellActivity extends Activity {
     }
   }
 
+  // Create a new activity with an intent to view a url.
+  public void createViewIntent(String url) {
+    Log.d("HaskellActivity", "HaskellActivity::createViewIntent starting");
+    Intent intent = new Intent("android.intent.action.VIEW", Uri.parse(url));
+    Log.d("HaskellActivity", "HaskellActivity::createViewIntent created intent");
+    startActivity(intent);
+    Log.d("HaskellActivity", "HaskellActivity::createViewIntent started activity");
+  }
+
   // Proper separation of concerns is really a whole lot of work in Java, so
   // we simply handle PermissionRequests directly here - it is just sooo much
   // easier. Java makes it really hard to write good code.
