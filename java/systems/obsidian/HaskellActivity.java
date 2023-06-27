@@ -161,14 +161,26 @@ public class HaskellActivity extends Activity {
   }
 
   // Create a new activity with an intent to view a file at a path.
+  // https://developer.android.com/training/secure-file-sharing
   public void createViewIntent(String path) {
       try {
+	  Log.d("HaskellActivity", "HaskellActivity::createViewIntent making File");
 	  File theFile = new File(path);
-	  Uri contentUri = FileProvider.getUriForFile(this, "io.privatestorage.privatestoragemobile", theFile);
+	  Log.d("HaskellActivity", "HaskellActivity::createViewIntent getting uri");
+	  Log.d("HaskellActivity", theFile.toString());
+	  // The string is the "authority" and must agree with the Android
+	  // manifest XML the application uses.  Perhaps this should be a
+	  // parameter supplied by the application, since the application
+	  // controls that manifest...
+	  Uri contentUri = FileProvider.getUriForFile(this, "io.privatestorage.privatestoragemobile.fileprovider", theFile);
 
+	  Log.d("HaskellActivity", "HaskellActivity::createViewIntent making intent");
 	  Intent intent = new Intent(Intent.ACTION_VIEW);
+	  Log.d("HaskellActivity", "HaskellActivity::createViewIntent setting data");
 	  intent.setData(contentUri);
-	  intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+	  Log.d("HaskellActivity", "HaskellActivity::createViewIntent setting flags");
+	  intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+	  Log.d("HaskellActivity", "HaskellActivity::createViewIntent starting activity");
 	  startActivity(intent);
       } catch (Exception e) {
 	  Log.d("HaskellActivity", "HaskellActivity::createViewIntent failing");
