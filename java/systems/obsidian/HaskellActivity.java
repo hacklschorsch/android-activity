@@ -4,6 +4,7 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Notification;
 import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.Manifest;
@@ -12,11 +13,13 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.webkit.PermissionRequest;
+import androidx.core.content.FileProvider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.SynchronousQueue;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.io.File;
 import android.webkit.ValueCallback;
 
 public class HaskellActivity extends Activity {
@@ -154,13 +157,21 @@ public class HaskellActivity extends Activity {
     }
   }
 
-  // Create a new activity with an intent to view a url.
-  public void createViewIntent(String url) {
-    Log.d("HaskellActivity", "HaskellActivity::createViewIntent starting");
-    Intent intent = new Intent("android.intent.action.VIEW", Uri.parse(url));
-    Log.d("HaskellActivity", "HaskellActivity::createViewIntent created intent");
-    startActivity(intent);
-    Log.d("HaskellActivity", "HaskellActivity::createViewIntent started activity");
+  // Create a new activity with an intent to view a file at a path.
+  public void createViewIntent(String path) {
+      try {
+	  File theFile = new File(path);
+	  Uri contentUri = FileProvider.getUriForFile(this, "io.privatestorage.privatestoragemobile", theFile);
+
+	  Intent intent = new Intent(Intent.ACTION_VIEW);
+	  intent.setData(contentUri);
+	  intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+	  startActivity(intent);
+      } catch (Exception e) {
+	  Log.d("HaskellActivity", "HaskellActivity::createViewIntent failing");
+	  Log.d("HaskellActivity", e.toString());
+      }
+
   }
 
   // Proper separation of concerns is really a whole lot of work in Java, so
