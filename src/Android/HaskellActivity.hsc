@@ -143,7 +143,7 @@ activityCallbacksToPtrs ac = ActivityCallbacksPtrs
         b' <- peekCString b
         _activityCallbacks_onNewIntent ac a' b'
       )
-  <*> wrapCStringIO peekCString 
+  <*> wrapCStringIO (peekCString a)
 
 data ActivityCallbacksPtrs = ActivityCallbacksPtrs
   { _activityCallbacksPtrs_onCreate :: FunPtr (IO ())
