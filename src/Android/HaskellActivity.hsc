@@ -93,7 +93,6 @@ data ActivityCallbacks = ActivityCallbacks
   , _activityCallbacks_onRestart :: IO ()
   , _activityCallbacks_onBackPressed :: IO ()
   , _activityCallbacks_onNewIntent :: String -> String -> IO ()
-  , _activityCallbacks_firebaseInstanceIdServiceSendRegistrationToServer :: String -> IO ()
   }
 
 instance Default ActivityCallbacks where
@@ -107,7 +106,6 @@ instance Default ActivityCallbacks where
     , _activityCallbacks_onRestart = return ()
     , _activityCallbacks_onBackPressed = return ()
     , _activityCallbacks_onNewIntent = \_ _ -> return ()
-    , _activityCallbacks_firebaseInstanceIdServiceSendRegistrationToServer = \_ -> return ()
     }
 
 traceBracket :: String -> IO a -> IO a
@@ -124,8 +122,6 @@ traceActivityCallbacks ac = ActivityCallbacks
   , _activityCallbacks_onRestart = traceBracket "onRestart" $ _activityCallbacks_onRestart ac
   , _activityCallbacks_onNewIntent = \x y -> traceBracket "onNewIntent" $ _activityCallbacks_onNewIntent ac x y
   , _activityCallbacks_onBackPressed = traceBracket "onBackPressed" $ _activityCallbacks_onBackPressed ac
-  , _activityCallbacks_firebaseInstanceIdServiceSendRegistrationToServer = \x ->
-      traceBracket "firebaseInstanceIdServiceSendRegistrationToServer" $ _activityCallbacks_firebaseInstanceIdServiceSendRegistrationToServer ac x
   }
 
 foreign import ccall "wrapper" wrapIO :: IO () -> IO (FunPtr (IO ()))
@@ -149,7 +145,6 @@ activityCallbacksToPtrs ac = ActivityCallbacksPtrs
       )
   <*> wrapCStringIO (\token -> do
         token' <- peekCString token
-        _activityCallbacks_firebaseInstanceIdServiceSendRegistrationToServer ac token'
       )
 
 data ActivityCallbacksPtrs = ActivityCallbacksPtrs
@@ -162,7 +157,6 @@ data ActivityCallbacksPtrs = ActivityCallbacksPtrs
   , _activityCallbacksPtrs_onRestart :: FunPtr (IO ())
   , _activityCallbacksPtrs_onBackPressed :: FunPtr (IO ())
   , _activityCallbacksPtrs_onNewIntent :: FunPtr (CString -> CString -> IO ())
-  , _activityCallbacksPtrs_firebaseInstanceIdService_sendRegistrationToServer :: FunPtr (CString -> IO ())
   }
 
 instance Storable ActivityCallbacksPtrs where
@@ -178,7 +172,6 @@ instance Storable ActivityCallbacksPtrs where
     #{poke ActivityCallbacks, onRestart} p $ _activityCallbacksPtrs_onRestart ac
     #{poke ActivityCallbacks, onBackPressed} p $ _activityCallbacksPtrs_onBackPressed ac
     #{poke ActivityCallbacks, onNewIntent} p $ _activityCallbacksPtrs_onNewIntent ac
-    #{poke ActivityCallbacks, firebaseInstanceIdService_sendRegistrationToServer} p $ _activityCallbacksPtrs_firebaseInstanceIdService_sendRegistrationToServer ac
   peek p = ActivityCallbacksPtrs
     <$> #{peek ActivityCallbacks, onCreate} p
     <*> #{peek ActivityCallbacks, onStart} p
@@ -189,4 +182,3 @@ instance Storable ActivityCallbacksPtrs where
     <*> #{peek ActivityCallbacks, onRestart} p
     <*> #{peek ActivityCallbacks, onBackPressed} p
     <*> #{peek ActivityCallbacks, onNewIntent} p
-    <*> #{peek ActivityCallbacks, firebaseInstanceIdService_sendRegistrationToServer} p
