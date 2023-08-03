@@ -125,7 +125,6 @@ traceActivityCallbacks ac = ActivityCallbacks
   }
 
 foreign import ccall "wrapper" wrapIO :: IO () -> IO (FunPtr (IO ()))
-foreign import ccall "wrapper" wrapCStringIO :: (CString -> IO ()) -> IO (FunPtr (CString -> IO ()))
 foreign import ccall "wrapper" wrapCStringCStringIO :: (CString -> CString -> IO ()) -> IO (FunPtr (CString -> CString -> IO ()))
 
 activityCallbacksToPtrs :: ActivityCallbacks -> IO ActivityCallbacksPtrs
