@@ -172,7 +172,7 @@ public class HaskellActivity extends Activity {
 	  // manifest XML the application uses.  Perhaps this should be a
 	  // parameter supplied by the application, since the application
 	  // controls that manifest...
-	  Uri contentUri = FileProvider.getUriForFile(this, "io.privatestorage.privatestoragemobile.fileprovider", theFile);
+	  Uri contentUri = FileProvider.getUriForFile(this, "org.tahoe_lafs.tahoe_lafs_mobile.fileprovider", theFile);
 
 	  Log.d("HaskellActivity", "HaskellActivity::createViewIntent making intent");
 	  Intent intent = new Intent(Intent.ACTION_VIEW);
